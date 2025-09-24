@@ -17,7 +17,7 @@ SPACK_DIR="${TOPDIR}/.spack_internals/spack_${OS_TAG}_${SPACK_VERSION}"
 ENV_NAME="${OS_TAG}"
 YAML_SOURCE="./${OS_TAG}.yaml"
 VIEWDIR="${TOPDIR}/${OS_TAG}"
-NPROC=4
+NPROC=32
 
 echo "[+] Using OS tag:     $OS_TAG"
 echo "[+] Using TOPDIR:     $TOPDIR"
