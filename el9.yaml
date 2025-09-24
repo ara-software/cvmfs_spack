@@ -1,0 +1,19 @@
+spack:
+  specs:
+    - gcc@15.2.0 +binutils ^zlib-ng~opt
+    - cmake@4.1.1
+    - fftw@3.3.10
+    - gsl@2.8
+    - sqlite@3.50.4
+    - python@3.13.7 +ssl +shared +zlib +sqlite3 ^sqlite@3.50.4
+    - py-pip
+    - py-pybind11
+    - py-cython
+    - xz@5.6.3
+    - root@6.36.04 +python +gsl +tmva +roofit +http +ssl
+  concretizer:
+    unify: true
+  packages:
+    all:
+      prefer:
+        - "gcc@15.2.0"
