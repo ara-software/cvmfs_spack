@@ -10,7 +10,7 @@ fi
 
 OS_TAG="$1"
 TOPDIR="$2"
-SPACK_VERSION="v1.0.0"
+SPACK_VERSION="v1.0.2"
 
 # ==== Derived Paths ====
 SPACK_DIR="${TOPDIR}/.spack_internals/spack_${OS_TAG}_${SPACK_VERSION}"
@@ -28,10 +28,6 @@ echo "[+] Using SPACK DIR:  $SPACK_DIR"
 if [ ! -d "$SPACK_DIR" ]; then
     echo "[+] Cloning Spack into $SPACK_DIR..."
     mkdir -p "$(dirname "$SPACK_DIR")"
-#    wget -O spack-$SPACK_VERSION.tar.gz \
-#      "https://github.com/spack/spack/archive/refs/tags/${SPACK_VERSION}.tar.gz"
-#    tar -xzf spack-$SPACK_VERSION.tar.gz -C "$SPACK_DIR" --strip-components=1
-#    rm spack-$SPACK_VERSION.tar.gz
 	git clone --depth=1 --branch "$SPACK_VERSION" https://github.com/spack/spack.git "$SPACK_DIR"
 fi
 source "$SPACK_DIR/share/spack/setup-env.sh"
