@@ -1,7 +1,7 @@
 spack:
   specs:
     - gcc@15.2.0 +binutils ^zlib-ng~opt
-    - cmake@4.1.1
+    - cmake@4.1.2
     - fftw@3.3.10
     - gsl@2.8
     - sqlite@3.50.4
@@ -13,6 +13,7 @@ spack:
     - xz@5.6.3
     - root@6.36.04 +python +gsl +tmva +roofit +http +ssl +spectrum
     - librootfftwrapper@master
+    - araroot@master
   concretizer:
     unify: true
   packages:
