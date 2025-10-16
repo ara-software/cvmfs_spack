@@ -1,6 +1,18 @@
 #!/bin/bash
 set -euo pipefail
 
+# ==== ARGUMENTS ====
+if [ $# -ne 2 ]; then
+    echo "Usage: $0 <version> <os>"
+    echo "Example: $0 trunk el9"
+    exit 1
+fi
+
+VERSION="$1"
+OS="$2"
+IMAGE="./${OS}.sif"
+
+
 # the final real path where we want files to be installed
 # INSTALL_DIR="/cvmfs/rnog.opensciencegrid.org/software"
 INSTALL_DIR="/scratch/brianclark/ara_cvmfs_demo"
@@ -14,6 +26,7 @@ mkdir -p $SCRATCH_DIR
 BUILD_DIR="/scratch/brianclark/ara_build"
 mkdir -p $BUILD_DIR
 
+BUILD_SCRIPT="./build.sh"
 
 # in cvmfs, we bind BUILD_DIR to INSTALL_DIR
 # so that we can temporarily write to BUILD_DIR,
@@ -21,18 +34,11 @@ mkdir -p $BUILD_DIR
 # so that we can rsync them to their final destination at the end
 # and everything looks alright
 
-BUILD_SCRIPT="./build.sh"
-OS_TAGS=("el9")
-
-for OS in "${OS_TAGS[@]}"; do
-    IMAGE="./osg_${OS}.sif"
-
-    echo "[+] Building for $OS using image: $IMAGE"
-    apptainer exec \
-        -B "$SCRATCH_DIR":/tmp\
-        -B "$BUILD_DIR":"$INSTALL_DIR" \
-        -B /var:/var \
-        -B "$PWD":"$PWD" \
-        "$IMAGE" \
-        "$BUILD_SCRIPT" "$OS" "$INSTALL_DIR"
-done
+echo "[+] Building $VERSION for $OS using image: $IMAGE"
+apptainer exec \
+    -B "$SCRATCH_DIR":/tmp\
+    -B "$BUILD_DIR":"$INSTALL_DIR" \
+    -B /var:/var \
+    -B "$PWD":"$PWD" \
+    "$IMAGE" \
+    "$BUILD_SCRIPT" "$VERSION" "$OS" "$INSTALL_DIR"

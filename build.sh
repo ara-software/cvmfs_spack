@@ -2,23 +2,24 @@
 set -euo pipefail
 
 # ==== ARGUMENTS ====
-if [ $# -ne 2 ]; then
-    echo "Usage: $0 <os_tag> <topdir>"
-    echo "Example: $0 el9 /cvmfs/myorg/software"
+if [ $# -ne 3 ]; then
+    echo "Usage: $0 <version> <os_tag> <topdir>"
+    echo "Example: $0 trunk el9 /cvmfs/myorg/software"
     exit 1
 fi
 
-OS_TAG="$1"
-TOPDIR="$2"
+VERSION="$1"
+OS_TAG="$2"
+TOPDIR="$3"
 SPACK_VERSION="v1.0.0"
 
 # ==== Derived Paths ====
-SPACK_DIR="${TOPDIR}/.spack_internals/spack_${OS_TAG}_${SPACK_VERSION}"
-SPACK_USER_CONFIG="/tmp/spack_user_config_${OS_TAG}_$$"
-SPACK_USER_CACHE="/tmp/spack_user_cache_${OS_TAG}_$$"
-ENV_NAME="${OS_TAG}"
-YAML_SOURCE="./${OS_TAG}.yaml"
-VIEWDIR="${TOPDIR}/${OS_TAG}"
+SPACK_DIR="${TOPDIR}/.spack_internals/spack_${VERSION}_${OS_TAG}_${SPACK_VERSION}"
+SPACK_USER_CONFIG="/tmp/spack_user_config_${VERSION}_${OS_TAG}_$$"
+SPACK_USER_CACHE="/tmp/spack_user_cache_${VERSION}_${OS_TAG}_$$"
+ENV_NAME="${VERSION}_${OS_TAG}"
+YAML_SOURCE="./${VERSION}/${VERSION}.yaml"
+VIEWDIR="${TOPDIR}/${VERSION}/${OS_TAG}"
 NPROC=32
 
 echo "[+] Using OS tag:     $OS_TAG"
@@ -61,22 +62,11 @@ echo "[+] Creating and activating Spack environment..."
 spack env create "$ENV_NAME" "$YAML_SOURCE" --with-view "$VIEWDIR"
 spack env activate "$ENV_NAME"
 
-# spack spec root | grep -A 5 gcc-runtime
-
-# spack clean -s araroot
-# spack uninstall -y araroot
-# # spack config add "packages:all:require:'%gcc@15.2.0'"
-
 # ==== STEP 4: Concretize and Install Full Stack ====
-echo "[+] Adding custom repo..."
-spack repo add "./spack_packages"
 echo "[+] Starting concretization..."
 spack concretize --fresh --reuse
 echo "[+] Concretization finished. Starting installation..."
 spack install -j "$NPROC"
-
-# spack clean -s araroot  # -s removes the stage directory
-# spack install --verbose araroot 2>&1 | grep -i "std=c++"
 
 # # ==== STEP 5: Install Python Needs ====
 # echo "[+] Installing final pip packages..."
