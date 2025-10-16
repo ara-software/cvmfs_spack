@@ -17,6 +17,7 @@ SPACK_VERSION="v1.0.0"
 SPACK_DIR="${TOPDIR}/.spack_internals/spack_${VERSION}_${OS_TAG}_${SPACK_VERSION}"
 SPACK_USER_CONFIG="/tmp/spack_user_config_${VERSION}_${OS_TAG}_$$"
 SPACK_USER_CACHE="/tmp/spack_user_cache_${VERSION}_${OS_TAG}_$$"
+OTHER_SCRATCH_SPACE="/tmp/other_scratch_space_${VERSION}_${OS_TAG}_$$"
 ENV_NAME="${VERSION}_${OS_TAG}"
 YAML_SOURCE="./${VERSION}/${VERSION}.yaml"
 VIEWDIR="${TOPDIR}/${VERSION}/${OS_TAG}"
@@ -28,6 +29,8 @@ echo "[+] Using VIEWDIR:    $VIEWDIR"
 echo "[+] Using SPACK DIR:  $SPACK_DIR"
 echo "[+] Using USER CONFIG:   $SPACK_USER_CONFIG"
 echo "[+] Using USER CACHE:    $SPACK_USER_CACHE"
+echo "[+] Using other scratch space:    $OTHER_SCRATCH_SPACE"
+
 
 # ==== STEP 1: Clone Spack if Needed ====
 if [ ! -d "$SPACK_DIR" ]; then
@@ -68,14 +71,19 @@ spack concretize --fresh --reuse
 echo "[+] Concretization finished. Starting installation..."
 spack install -j "$NPROC"
 
-# # ==== STEP 5: Install Python Needs ====
-# echo "[+] Installing final pip packages..."
-# python3 -m pip install --upgrade pip
-# pip3 install gnureadline h5py healpy \
-#     iminuit tables tqdm matplotlib numpy pandas pynverse astropy \
-#     scipy uproot awkward libconf \
-#     tinydb tinydb-serialization aenum pymongo dash plotly \
-#     toml peakutils configparser filelock pre-commit
+# ==== STEP 5: Install Python Needs ====
+echo "[+] Installing final pip packages..."
+python3 -m pip install --upgrade pip
+pip3 install gnureadline h5py healpy \
+    iminuit tables tqdm matplotlib numpy pandas pynverse astropy \
+    scipy uproot awkward libconf \
+    tinydb tinydb-serialization aenum pymongo dash plotly \
+    toml peakutils configparser filelock pre-commit
+
+# ==== STEP 6: Now we need some ARA specific stuff ====
+
+./build_libRootFftwWrapper.sh --source "$OTHER_SCRATCH_SPACE" --build "$VIEWDIR" --root "$VIEWDIR" --deps "$VIEWDIR" || error 108 "Failed libRootFftwWrapper build"
+
 
 # # ==== STEP 6: Create Setup Script ====
 # echo "[+] Creating setup script..."
