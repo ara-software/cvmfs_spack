@@ -82,7 +82,7 @@ pip3 install gnureadline h5py healpy \
 
 # ==== STEP 6: Now we need some ARA specific stuff ====
 
-./build_libRootFftwWrapper.sh --source "$OTHER_SCRATCH_SPACE" --build "$VIEWDIR" --root "$VIEWDIR" --deps "$VIEWDIR" || error 108 "Failed libRootFftwWrapper build"
+# ./${VERSION}/build_libRootFftwWrapper.sh --source "$OTHER_SCRATCH_SPACE" --build "$VIEWDIR" --root "$VIEWDIR" --deps "$VIEWDIR" || error 108 "Failed libRootFftwWrapper build"
 
 
 # # ==== STEP 6: Create Setup Script ====
