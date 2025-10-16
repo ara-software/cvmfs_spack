@@ -9,7 +9,7 @@ PACKAGE_DIR_NAME="libRootFftwWrapper"
 
 
 usage() {
-	echo "usage: $0 [-h] [-d destination] [-s destination] [-b destination] [-r directory] [--deps directory] [--make_arg argument] [--clean_source]"
+	echo "usage: $0 [-h] [-d destination] [-s destination] [-b destination] [-r directory] [--deps directory] [--make_arg argument] [--skip_download, --skip_build] [--clean_source]"
 	echo "  -h, --help                      display this help message"
 	echo "  -d, --dest destination          set the destination directory (containing source and build directories)"
 	echo "  -s, --source destination        set the source destination directory"
@@ -17,6 +17,8 @@ usage() {
 	echo "  -r, --root directory            set the root build directory"
 	echo "  --deps directory                set the dependency build directory"
 	echo "  --make_arg argument             additional argument to be passed to make"
+	echo "  --skip_download                 $PACKAGE_NAME exists pre-downloaded at the source destination"
+	echo "  --skip_build                    $PACKAGE_NAME has already been built at the build destination"
 	echo "  --clean_source                  remove source directory after build"
 }
 
@@ -49,6 +51,12 @@ while [ "$1" != "" ]; do
 		--deps )
 			shift
 			DEPS_BUILD_DIR="$1"
+		;;
+		--skip_download )
+			SKIP_DOWNLOAD=true
+		;;
+		--skip_build )
+			SKIP_BUILD=true
 		;;
 		--make_arg )
 			shift
