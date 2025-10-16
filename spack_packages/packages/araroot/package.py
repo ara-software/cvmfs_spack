@@ -14,28 +14,58 @@ class Araroot(CMakePackage):
     depends_on("sqlite")
     depends_on("librootfftwrapper")
 
-    # Make sure every compile (incl. dictionaries) carries the same -std=c++<ROOT>
+    # Force this package to use the same compiler as ROOT
+    conflicts("%gcc", when="^root%clang")
+    conflicts("%clang", when="^root%gcc")
+
     def setup_build_environment(self, env):
-        # 1) Force compilers for this build env (overrides /usr/bin/cc if exported)
-        env.set("CC",  self.compiler.cc)   # e.g. .../gcc-15.2.0/bin/gcc
-        env.set("CXX", self.compiler.cxx)  # e.g. .../gcc-15.2.0/bin/g++
-        # 2) Force standard to match ROOT's (e.g. 17/20/23)
+        # Get ROOT's C++ standard
         std = str(self.spec["root"].variants["cxxstd"].value)
-        env.append_flags("CXXFLAGS", f"-std=c++{std}")
+        
+        # Force the standard everywhere and add SQLite include path
+        env.set("CXXFLAGS", f"-std=c++{std} -I{self.spec['sqlite'].prefix.include}")
+        env.set("CMAKE_CXX_FLAGS", f"-std=c++{std} -I{self.spec['sqlite'].prefix.include}")
+        
+        # Use ROOT's gcc-runtime if available
+        root_gcc_runtime = None
+        for dep in self.spec["root"].traverse():
+            if dep.name == "gcc-runtime":
+                root_gcc_runtime = dep
+                break
+        
+        if root_gcc_runtime:
+            gcc_lib = root_gcc_runtime.prefix.lib64
+            env.prepend_path("LD_LIBRARY_PATH", gcc_lib)
 
     def cmake_args(self):
-        # Mirror ROOT's C++ standard
+        # Get ROOT's C++ standard
         std = str(self.spec["root"].variants["cxxstd"].value)
 
-        # Also pin compilers in the CMake cache
-        cc  = self.spec.compiler.cc
-        cxx = self.spec.compiler.cxx
-
-        return [
-            self.define("CMAKE_INSTALL_PREFIX", self.prefix),
-            self.define("CMAKE_C_COMPILER", cc),
-            self.define("CMAKE_CXX_COMPILER", cxx),
+        args = [
+            # Force CMake to use Spack's compiler (same as ROOT)
+            self.define("CMAKE_C_COMPILER", os.environ.get("SPACK_CC", "cc")),
+            self.define("CMAKE_CXX_COMPILER", os.environ.get("SPACK_CXX", "c++")),
+            
+            # Set the C++ standard multiple ways to override whatever the project does
             self.define("CMAKE_CXX_STANDARD", std),
-            self.define("CMAKE_CXX_STANDARD_REQUIRED", True),
-            self.define("CMAKE_CXX_EXTENSIONS", False),
+            self.define("CMAKE_CXX_STANDARD_REQUIRED", "ON"),
+            self.define("CMAKE_CXX_EXTENSIONS", "OFF"),
+            
+            # Force it through flags as well, including SQLite include path
+            self.define("CMAKE_CXX_FLAGS", f"-std=c++{std} -I{self.spec['sqlite'].prefix.include}"),
         ]
+        
+        # Find ROOT's gcc-runtime and use it explicitly
+        root_gcc_runtime = None
+        for dep in self.spec["root"].traverse():
+            if dep.name == "gcc-runtime":
+                root_gcc_runtime = dep
+                break
+        
+        if root_gcc_runtime:
+            gcc_lib = root_gcc_runtime.prefix.lib64
+            libstdcxx = f"{gcc_lib}/libstdc++.so.6"
+            args.append(self.define("CMAKE_EXE_LINKER_FLAGS", f"-L{gcc_lib} -Wl,-rpath,{gcc_lib} -Wl,{libstdcxx}"))
+            args.append(self.define("CMAKE_SHARED_LINKER_FLAGS", f"-L{gcc_lib} -Wl,-rpath,{gcc_lib} -Wl,{libstdcxx}"))
+
+        return args

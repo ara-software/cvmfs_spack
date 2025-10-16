@@ -10,10 +10,12 @@ fi
 
 OS_TAG="$1"
 TOPDIR="$2"
-SPACK_VERSION="v1.0.2"
+SPACK_VERSION="v1.0.0"
 
 # ==== Derived Paths ====
 SPACK_DIR="${TOPDIR}/.spack_internals/spack_${OS_TAG}_${SPACK_VERSION}"
+SPACK_USER_CONFIG="/tmp/spack_user_config_${OS_TAG}_$$"
+SPACK_USER_CACHE="/tmp/spack_user_cache_${OS_TAG}_$$"
 ENV_NAME="${OS_TAG}"
 YAML_SOURCE="./${OS_TAG}.yaml"
 VIEWDIR="${TOPDIR}/${OS_TAG}"
@@ -23,30 +25,47 @@ echo "[+] Using OS tag:     $OS_TAG"
 echo "[+] Using TOPDIR:     $TOPDIR"
 echo "[+] Using VIEWDIR:    $VIEWDIR"
 echo "[+] Using SPACK DIR:  $SPACK_DIR"
+echo "[+] Using USER CONFIG:   $SPACK_USER_CONFIG"
+echo "[+] Using USER CACHE:    $SPACK_USER_CACHE"
 
 # ==== STEP 1: Clone Spack if Needed ====
 if [ ! -d "$SPACK_DIR" ]; then
     echo "[+] Cloning Spack into $SPACK_DIR..."
     mkdir -p "$(dirname "$SPACK_DIR")"
-	git clone --depth=1 --branch "$SPACK_VERSION" https://github.com/spack/spack.git "$SPACK_DIR"
+	  git clone --depth=1 --branch "$SPACK_VERSION" https://github.com/spack/spack.git "$SPACK_DIR"
 fi
+# Set paths BEFORE sourcing Spack
+export SPACK_USER_CONFIG_PATH="$SPACK_USER_CONFIG"
+export SPACK_USER_CACHE_PATH="$SPACK_USER_CACHE"
+mkdir -p "$SPACK_USER_CONFIG"
+mkdir -p "$SPACK_USER_CACHE"
 source "$SPACK_DIR/share/spack/setup-env.sh"
 
 # ==== STEP 2: Upgrade GCC first ====
 spack compiler add # find the compilers we have so far
-echo "[+] Bootstrapping gcc@15.2.0..."
+spack compilers
+BOOTSTRAP_COMPILER=$(spack compilers | grep "gcc@" | head -1 | grep -o 'gcc@[0-9.]*')
+echo "[+] Will use $BOOTSTRAP_COMPILER to bootstrap gcc@15.2.0"
 if ! spack compilers | grep -q gcc@15.2.0; then
     # install the compiler we want, and force rebuild binutils
     # along with telling it to ignore any fancy optimizations
     # that might not be available globally
-    spack install --add -j "$NPROC" gcc@15.2.0 +binutils ^zlib-ng~opt
+    echo "[+] Bootstrapping gcc@15.2.0..."
+    spack install --add -j "$NPROC" "gcc@15.2.0 %${BOOTSTRAP_COMPILER} +binutils ^zlib-ng~opt"
     spack compiler find $(spack location -i gcc@15.2.0)
 fi
+spack compilers
 
 # ==== STEP 3: Create Environment (with view), and activate ====
 echo "[+] Creating and activating Spack environment..."
 spack env create "$ENV_NAME" "$YAML_SOURCE" --with-view "$VIEWDIR"
 spack env activate "$ENV_NAME"
+
+# spack spec root | grep -A 5 gcc-runtime
+
+# spack clean -s araroot
+# spack uninstall -y araroot
+# # spack config add "packages:all:require:'%gcc@15.2.0'"
 
 # ==== STEP 4: Concretize and Install Full Stack ====
 echo "[+] Adding custom repo..."
@@ -56,54 +75,57 @@ spack concretize --fresh --reuse
 echo "[+] Concretization finished. Starting installation..."
 spack install -j "$NPROC"
 
-# ==== STEP 5: Install Python Needs ====
-echo "[+] Installing final pip packages..."
-python3 -m pip install --upgrade pip
-pip3 install gnureadline h5py healpy \
-    iminuit tables tqdm matplotlib numpy pandas pynverse astropy \
-    scipy uproot awkward libconf \
-    tinydb tinydb-serialization aenum pymongo dash plotly \
-    toml peakutils configparser filelock pre-commit
+# spack clean -s araroot  # -s removes the stage directory
+# spack install --verbose araroot 2>&1 | grep -i "std=c++"
 
-# ==== STEP 6: Create Setup Script ====
-echo "[+] Creating setup script..."
-PYVER=$("$VIEWDIR/bin/python3" -c "import sys; print(f'{sys.version_info.major}.{sys.version_info.minor}')")
-SETUP_SCRIPT="$TOPDIR/setup_${OS_TAG}.sh"
+# # ==== STEP 5: Install Python Needs ====
+# echo "[+] Installing final pip packages..."
+# python3 -m pip install --upgrade pip
+# pip3 install gnureadline h5py healpy \
+#     iminuit tables tqdm matplotlib numpy pandas pynverse astropy \
+#     scipy uproot awkward libconf \
+#     tinydb tinydb-serialization aenum pymongo dash plotly \
+#     toml peakutils configparser filelock pre-commit
 
-cat > "$SETUP_SCRIPT" <<EOS
-#!/bin/bash
-if [ -n "\${ZSH_VERSION:-}" ]; then _SRC="\${(%):-%N}"; else _SRC="\${BASH_SOURCE[0]:-\$0}"; fi
-export MYPROJ_ROOT="\$(cd "\$(dirname "\$_SRC")/$OS_TAG" && pwd)"
+# # ==== STEP 6: Create Setup Script ====
+# echo "[+] Creating setup script..."
+# PYVER=$("$VIEWDIR/bin/python3" -c "import sys; print(f'{sys.version_info.major}.{sys.version_info.minor}')")
+# SETUP_SCRIPT="$TOPDIR/setup_${OS_TAG}.sh"
 
-# Executables from the view
-export PATH="\$MYPROJ_ROOT/bin:\$PATH"
+# cat > "$SETUP_SCRIPT" <<EOS
+# #!/bin/bash
+# if [ -n "\${ZSH_VERSION:-}" ]; then _SRC="\${(%):-%N}"; else _SRC="\${BASH_SOURCE[0]:-\$0}"; fi
+# export MYPROJ_ROOT="\$(cd "\$(dirname "\$_SRC")/$OS_TAG" && pwd)"
 
-# Some exports for CMake
-export CMAKE_PREFIX_PATH="\$MYPROJ_ROOT\${CMAKE_PREFIX_PATH:+:\$CMAKE_PREFIX_PATH}"
-export CC="\$MYPROJ_ROOT/bin/gcc"
-export CXX="\$MYPROJ_ROOT/bin/g++"
-export FC="\$MYPROJ_ROOT/bin/gfortran"
+# # Executables from the view
+# export PATH="\$MYPROJ_ROOT/bin:\$PATH"
 
-# Optional convenience vars some scripts still look for
-export ROOTSYS="\$MYPROJ_ROOT"
-export GSLDIR="\$MYPROJ_ROOT"
+# # Some exports for CMake
+# export CMAKE_PREFIX_PATH="\$MYPROJ_ROOT\${CMAKE_PREFIX_PATH:+:\$CMAKE_PREFIX_PATH}"
+# export CC="\$MYPROJ_ROOT/bin/gcc"
+# export CXX="\$MYPROJ_ROOT/bin/g++"
+# export FC="\$MYPROJ_ROOT/bin/gfortran"
 
-# Python modules installed into the view
-export PYTHONPATH="\$MYPROJ_ROOT/lib/python$PYVER/site-packages\${PYTHONPATH:+:\$PYTHONPATH}"
+# # Optional convenience vars some scripts still look for
+# export ROOTSYS="\$MYPROJ_ROOT"
+# export GSLDIR="\$MYPROJ_ROOT"
 
-# PyROOT modules (what thisroot.sh would add, but via the view)
-for d in "\$MYPROJ_ROOT/lib/root" "\$MYPROJ_ROOT/lib64/root"; do
-  if [ -d "\$d" ]; then
-    case ":\$PYTHONPATH:" in
-      *:"\$d":*) : ;;  # already present
-      *) export PYTHONPATH="\$d\${PYTHONPATH:+:\$PYTHONPATH}";;
-    esac
-  fi
-done
+# # Python modules installed into the view
+# export PYTHONPATH="\$MYPROJ_ROOT/lib/python$PYVER/site-packages\${PYTHONPATH:+:\$PYTHONPATH}"
 
-export LD_LIBRARY_PATH="\$MYPROJ_ROOT/lib:\$MYPROJ_ROOT/lib64\${LD_LIBRARY_PATH:+:\$LD_LIBRARY_PATH}"
-export LD_LIBRARY_PATH="\$MYPROJ_ROOT/lib/root:\$LD_LIBRARY_PATH"
-EOS
+# # PyROOT modules (what thisroot.sh would add, but via the view)
+# for d in "\$MYPROJ_ROOT/lib/root" "\$MYPROJ_ROOT/lib64/root"; do
+#   if [ -d "\$d" ]; then
+#     case ":\$PYTHONPATH:" in
+#       *:"\$d":*) : ;;  # already present
+#       *) export PYTHONPATH="\$d\${PYTHONPATH:+:\$PYTHONPATH}";;
+#     esac
+#   fi
+# done
 
-chmod +x "$SETUP_SCRIPT"
-echo "[✓] Setup script written to: $SETUP_SCRIPT"
+# export LD_LIBRARY_PATH="\$MYPROJ_ROOT/lib:\$MYPROJ_ROOT/lib64\${LD_LIBRARY_PATH:+:\$LD_LIBRARY_PATH}"
+# export LD_LIBRARY_PATH="\$MYPROJ_ROOT/lib/root:\$LD_LIBRARY_PATH"
+# EOS
+
+# chmod +x "$SETUP_SCRIPT"
+# echo "[✓] Setup script written to: $SETUP_SCRIPT"
