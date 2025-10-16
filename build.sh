@@ -15,13 +15,14 @@ SPACK_VERSION="v1.0.0"
 
 # ==== Derived Paths ====
 SPACK_DIR="${TOPDIR}/.spack_internals/spack_${VERSION}_${OS_TAG}_${SPACK_VERSION}"
-SPACK_USER_CONFIG="/tmp/spack_user_config_${VERSION}_${OS_TAG}_$$"
-SPACK_USER_CACHE="/tmp/spack_user_cache_${VERSION}_${OS_TAG}_$$"
-OTHER_SCRATCH_SPACE="/tmp/other_scratch_space_${VERSION}_${OS_TAG}_$$"
+SPACK_USER_CONFIG="/tmp/spack_user_config_${VERSION}_${OS_TAG}_${SPACK_VERSION}"
+SPACK_USER_CACHE="/tmp/spack_user_cache_${VERSION}_${OS_TAG}_${SPACK_VERSION}"
+OTHER_SCRATCH_SPACE="/tmp/other_scratch_space_${VERSION}_${OS_TAG}_${SPACK_VERSION}"
 ENV_NAME="${VERSION}_${OS_TAG}"
-YAML_SOURCE="./${VERSION}/${VERSION}.yaml"
+YAML_SOURCE="./versions/${VERSION}/${VERSION}.yaml"
 VIEWDIR="${TOPDIR}/${VERSION}/${OS_TAG}"
 NPROC=32
+export MAKE_ARGS="--make_arg -j$NPROC"
 
 echo "[+] Using OS tag:     $OS_TAG"
 echo "[+] Using TOPDIR:     $TOPDIR"
@@ -43,6 +44,7 @@ export SPACK_USER_CONFIG_PATH="$SPACK_USER_CONFIG"
 export SPACK_USER_CACHE_PATH="$SPACK_USER_CACHE"
 mkdir -p "$SPACK_USER_CONFIG"
 mkdir -p "$SPACK_USER_CACHE"
+mkdir -p "$OTHER_SCRATCH_SPACE"
 source "$SPACK_DIR/share/spack/setup-env.sh"
 
 # ==== STEP 2: Upgrade GCC first ====
@@ -62,27 +64,28 @@ spack compilers
 
 # ==== STEP 3: Create Environment (with view), and activate ====
 echo "[+] Creating and activating Spack environment..."
-spack env create "$ENV_NAME" "$YAML_SOURCE" --with-view "$VIEWDIR"
+# spack env create "$ENV_NAME" "$YAML_SOURCE" --with-view "$VIEWDIR"
 spack env activate "$ENV_NAME"
 
-# ==== STEP 4: Concretize and Install Full Stack ====
-echo "[+] Starting concretization..."
-spack concretize --fresh --reuse
-echo "[+] Concretization finished. Starting installation..."
-spack install -j "$NPROC"
+# # ==== STEP 4: Concretize and Install Full Stack ====
+# echo "[+] Starting concretization..."
+# spack concretize --fresh --reuse
+# echo "[+] Concretization finished. Starting installation..."
+# spack install -j "$NPROC"
 
-# ==== STEP 5: Install Python Needs ====
-echo "[+] Installing final pip packages..."
-python3 -m pip install --upgrade pip
-pip3 install gnureadline h5py healpy \
-    iminuit tables tqdm matplotlib numpy pandas pynverse astropy \
-    scipy uproot awkward libconf \
-    tinydb tinydb-serialization aenum pymongo dash plotly \
-    toml peakutils configparser filelock pre-commit
+# # ==== STEP 5: Install Python Needs ====
+# echo "[+] Installing final pip packages..."
+# python3 -m pip install --upgrade pip
+# pip3 install gnureadline healpy \
+#     iminuit tqdm matplotlib numpy pandas pynverse astropy \
+#     scipy uproot awkward libconf \
+#     tinydb tinydb-serialization aenum pymongo dash plotly \
+#     toml peakutils configparser filelock pre-commit
 
 # ==== STEP 6: Now we need some ARA specific stuff ====
 
-# ./${VERSION}/build_libRootFftwWrapper.sh --source "$OTHER_SCRATCH_SPACE" --build "$VIEWDIR" --root "$VIEWDIR" --deps "$VIEWDIR" || error 108 "Failed libRootFftwWrapper build"
+# which cmake
+./versions/${VERSION}/build_libRootFftwWrapper.sh --source "$OTHER_SCRATCH_SPACE" --build "$VIEWDIR" --root "$VIEWDIR" --deps "$VIEWDIR" $MAKE_ARGS || error 108 "Failed libRootFftwWrapper build"
 
 
 # # ==== STEP 6: Create Setup Script ====

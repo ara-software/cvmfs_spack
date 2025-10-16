@@ -3,12 +3,13 @@
 
 # Set script parameters
 PACKAGE_NAME="libRootFftwWrapper"
-DOWNLOAD_LINK="https://github.com/nichol77/libRootFftwWrapper/archive/master.tar.gz"
+# DOWNLOAD_LINK="https://github.com/nichol77/libRootFftwWrapper/archive/master.tar.gz"
+DOWNLOAD_LINK="https://github.com/clark2668/libRootFftwWrapper/archive/refs/heads/patch-1.tar.gz"
 PACKAGE_DIR_NAME="libRootFftwWrapper"
 
 
 usage() {
-	echo "usage: $0 [-h] [-d destination] [-s destination] [-b destination] [-r directory] [--deps directory] [--make_arg argument] [--skip_download, --skip_build] [--clean_source]"
+	echo "usage: $0 [-h] [-d destination] [-s destination] [-b destination] [-r directory] [--deps directory] [--make_arg argument] [--clean_source]"
 	echo "  -h, --help                      display this help message"
 	echo "  -d, --dest destination          set the destination directory (containing source and build directories)"
 	echo "  -s, --source destination        set the source destination directory"
@@ -20,8 +21,8 @@ usage() {
 }
 
 # Parse command line options
-SKIP_DOWNLOAD=false
-SKIP_BUILD=false
+SKIP_DOWNLOAD=false # unused feature
+SKIP_BUILD=false # unused feature
 CLEAN_SOURCE=false
 while [ "$1" != "" ]; do
 	case $1 in
@@ -48,6 +49,10 @@ while [ "$1" != "" ]; do
 		--deps )
 			shift
 			DEPS_BUILD_DIR="$1"
+		;;
+		--make_arg )
+			shift
+			MAKE_ARG="$1"
 		;;
 		--clean_source)
 			CLEAN_SOURCE=true
@@ -112,24 +117,20 @@ if [ $SKIP_BUILD = false ]; then
 	export ARA_DEPS_INSTALL_DIR="${DEPS_BUILD_DIR%/}"
 	export LD_LIBRARY_PATH="$ARA_DEPS_INSTALL_DIR/lib:$LD_LIBRARY_PATH"
 	export DYLD_LIBRARY_PATH="$ARA_DEPS_INSTALL_DIR/lib:$DYLD_LIBRARY_PATH"
-	export PATH="$ARA_DEPS_INSTALL_DIR/bin:$PATH"
 	. "${ROOT_BUILD_DIR%/}"/bin/thisroot.sh || exit 21
+	export PATH="$ARA_DEPS_INSTALL_DIR/bin:$PATH" # export *after* thisroot.sh
 	export SQLITE_ROOT="$ARA_DEPS_INSTALL_DIR"
 	export GSL_ROOT="$ARA_DEPS_INSTALL_DIR"
 	export FFTWSYS="$ARA_DEPS_INSTALL_DIR"
 	export CMAKE_PREFIX_PATH="$ARA_DEPS_INSTALL_DIR"
 fi
-
 # Run package installation
 if [ $SKIP_BUILD = false ]; then
 	echo "Compiling $PACKAGE_NAME"
 	cd "$PACKAGE_DIR_NAME"
-	sed -i 's:^find_package(FFTW REQUIRED):#find_package(FFTW REQUIRED)\
-set(FFTW_LIBRARIES "$ENV{FFTWSYS}/lib/libfftw3.so.3.6.9")\
-set(FFTW_INCLUDES "$ENV{FFTWSYS}/include"):' CMakeLists.txt
 	echo "Installing $PACKAGE_NAME"
-	make || exit 32
-	make install || exit 33
+	make "$MAKE_ARG" || exit 32
+	make install "$MAKE_ARG" || exit 33
 fi
 
 # Clean up source directory if requested
