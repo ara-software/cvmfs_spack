@@ -13,41 +13,44 @@ OS_TAG="$2"
 TOPDIR="$3"
 SPACK_VERSION="v1.0.0"
 
-
 # ==== CONFIGURATION STUFF ====
+
+# the root directory for everything
+# this will end up as something like /cvms/ara.opensciencegrid.org/trunk/alma9
+DESTDIR=${TOPDIR}/${VERSION}/${OS_TAG}
+
+# what will become the "misc_build" directory (for spack, this is the *view* directory)
+VIEWDIR="${DESTDIR}/misc_build"
+
+# what will become the "ara_build"
+ARA_BUILD_DIR="${DESTDIR}/ara_build"
+
+# what will become the "source" directory
+SOURCE_DIR="${DESTDIR}/source"
 
 # where spack should go
 # and a name for the spack environment
 # and tell spack how to find the yaml file
 # and set up some temporary files for spack, to contain its cache blast radius
-SPACK_DIR="${TOPDIR}/${VERSION}/.spack_internals/spack_${VERSION}_${OS_TAG}_${SPACK_VERSION}"
+SPACK_DIR="${DESTDIR}/.spack_internals/spack_${VERSION}_${OS_TAG}_${SPACK_VERSION}"
 ENV_NAME="${VERSION}_${OS_TAG}"
-YAML_SOURCE="./versions/${VERSION}/${VERSION}.yaml"
+YAML_SOURCE="./builders/${VERSION}/${VERSION}.yaml"
 SPACK_USER_CONFIG="/tmp/spack_user_config_${VERSION}_${OS_TAG}_${SPACK_VERSION}"
 SPACK_USER_CACHE="/tmp/spack_user_cache_${VERSION}_${OS_TAG}_${SPACK_VERSION}"
 
-THIS_BUILD_PATH="${TOPDIR}/${VERSION}/${OS_TAG}"
-
-# what will become the "misc_build" directory (for spack, this is the *view* directory)
-VIEWDIR="${THIS_BUILD_PATH}/misc_build"
-
-# what will become the "ara_build" 
-ARA_BUILD_DIR="${THIS_BUILD_PATH}/ara_build"
-
-# what will become the "source" directory
-SOURCE_DIR="${THIS_BUILD_PATH}/source"
 
 # number of processors, and the make arguments for ARA custom scripts
-NPROC=32
+NPROC=40
 export MAKE_ARGS="--make_arg -j$NPROC"
 
 # log everything to screen so we can see it
 echo "[+] Using OS tag:            $OS_TAG"
 echo "[+] Using TOPDIR:            $TOPDIR"
+echo "[+] Using DESTDIR:           $DESTDIR"
 echo "[+] Using VIEWDIR:           $VIEWDIR"
-echo "[+] Using SOURCE_DIR:        $SOURCE_DIR"
 echo "[+] Using ARA_BUILD_DIR:     $ARA_BUILD_DIR"
-echo "[+] Using SPACK DIR:         $SPACK_DIR"
+echo "[+] Using SOURCE_DIR:        $SOURCE_DIR"
+echo "[+] Using SPACK_DIR:         $SPACK_DIR"
 echo "[+] Using USER CONFIG:       $SPACK_USER_CONFIG"
 echo "[+] Using USER CACHE:        $SPACK_USER_CACHE"
 echo "[+] Build with NPROC=        $NPROC"
@@ -98,6 +101,7 @@ spack install -j "$NPROC"
 
 # ==== STEP 5: Install Python Needs ====
 echo "[+] Installing final pip packages..."
+export PIP_CACHE_DIR=$PACK_USER_CACHE_PATH # set pip cache (again, contain the blast radius...)
 python3 -m pip install --upgrade pip
 pip3 install gnureadline healpy \
     iminuit tqdm matplotlib numpy pandas pynverse astropy \
@@ -106,15 +110,15 @@ pip3 install gnureadline healpy \
     toml peakutils configparser filelock pre-commit
 
 ==== STEP 6: Now we need some ARA specific stuff ====
-./versions/${VERSION}/build_libRootFftwWrapper.sh --source "$SOURCE_DIR" --build "$ARA_BUILD_DIR" --root "$VIEWDIR" --deps "$VIEWDIR" $MAKE_ARGS || error 108 "Failed libRootFftwWrapper build"
-./versions/${VERSION}/build_AraRoot.sh --source "$SOURCE_DIR" --build "$ARA_BUILD_DIR" --root "$VIEWDIR" --deps "$VIEWDIR" || error 109 "Failed AraRoot build"
-./versions/${VERSION}/build_AraSim.sh --source "$SOURCE_DIR" --build "$ARA_BUILD_DIR" --root "$VIEWDIR" --deps "$VIEWDIR" $MAKE_ARGS || error 110 "Failed AraSim build"
-./versions/${VERSION}/build_libnuphase.sh --source "$SOURCE_DIR" --build "$ARA_BUILD_DIR" --root "$VIEWDIR" --deps "$VIEWDIR" || error 111 "Failed libnuphase build"
-./versions/${VERSION}/build_nuphaseroot.sh --source "$SOURCE_DIR" --build "$ARA_BUILD_DIR" --root "$VIEWDIR" --deps "$VIEWDIR" || error 112 "Failed nuphaseroot build"
+./builders/${VERSION}/build_libRootFftwWrapper.sh --source "$SOURCE_DIR" --build "$ARA_BUILD_DIR" --root "$VIEWDIR" --deps "$VIEWDIR" $MAKE_ARGS || error 108 "Failed libRootFftwWrapper build"
+./builders/${VERSION}/build_AraRoot.sh --source "$SOURCE_DIR" --build "$ARA_BUILD_DIR" --root "$VIEWDIR" --deps "$VIEWDIR" || error 109 "Failed AraRoot build"
+./builders/${VERSION}/build_AraSim.sh --source "$SOURCE_DIR" --build "$ARA_BUILD_DIR" --root "$VIEWDIR" --deps "$VIEWDIR" $MAKE_ARGS || error 110 "Failed AraSim build"
+./builders/${VERSION}/build_libnuphase.sh --source "$SOURCE_DIR" --build "$ARA_BUILD_DIR" --root "$VIEWDIR" --deps "$VIEWDIR" || error 111 "Failed libnuphase build"
+./builders/${VERSION}/build_nuphaseroot.sh --source "$SOURCE_DIR" --build "$ARA_BUILD_DIR" --root "$VIEWDIR" --deps "$VIEWDIR" || error 112 "Failed nuphaseroot build"
 
 # ==== STEP 6: Create Setup Script ====
 
-cat > ${THIS_BUILD_PATH}/setup.sh << 'EOF'
+cat > ${DESTDIR}/setup.sh << 'EOF'
 #!/bin/sh
 # Setup script for trunk version of the ARA software
 
@@ -152,4 +156,4 @@ export NUPHASE_INSTALL_DIR="$ARA_UTIL_INSTALL_DIR"
 EOF
 
 # Now replace the placeholder with the actual value
-sed -i "s|PATH_PLACEHOLDER_REPLACE_ME|$THIS_BUILD_PATH|g" ${THIS_BUILD_PATH}/setup.sh
+sed -i "s|PATH_PLACEHOLDER_REPLACE_ME|$DESTDIR|g" ${DESTDIR}/setup.sh

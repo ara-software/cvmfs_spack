@@ -4,7 +4,7 @@ set -euo pipefail
 # ==== ARGUMENTS ====
 if [ $# -ne 2 ]; then
     echo "Usage: $0 <version> <os>"
-    echo "Example: $0 trunk el9"
+    echo "Example: $0 trunk alma9"
     exit 1
 fi
 
