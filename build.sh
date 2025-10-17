@@ -87,7 +87,7 @@ spack compilers
 
 # ==== STEP 3: Create Environment (with view), and activate ====
 echo "[+] Creating and activating Spack environment..."
-# spack env create "$ENV_NAME" "$YAML_SOURCE" --with-view "$VIEWDIR"
+spack env create "$ENV_NAME" "$YAML_SOURCE" --with-view "$VIEWDIR"
 spack env activate "$ENV_NAME"
 
 # ==== STEP 4: Concretize and Install Full Stack ====
