@@ -87,25 +87,25 @@ echo "[+] Creating and activating Spack environment..."
 # spack env create "$ENV_NAME" "$YAML_SOURCE" --with-view "$VIEWDIR"
 spack env activate "$ENV_NAME"
 
-# # ==== STEP 4: Concretize and Install Full Stack ====
-# echo "[+] Starting concretization..."
-# spack concretize --fresh --reuse
-# echo "[+] Concretization finished. Starting installation..."
-# spack install -j "$NPROC"
+# ==== STEP 4: Concretize and Install Full Stack ====
+echo "[+] Starting concretization..."
+spack concretize --fresh --reuse
+echo "[+] Concretization finished. Starting installation..."
+spack install -j "$NPROC"
 
-# # ==== STEP 5: Install Python Needs ====
-# echo "[+] Installing final pip packages..."
-# python3 -m pip install --upgrade pip
-# pip3 install gnureadline healpy \
-#     iminuit tqdm matplotlib numpy pandas pynverse astropy \
-#     scipy uproot awkward libconf \
-#     tinydb tinydb-serialization aenum pymongo dash plotly \
-#     toml peakutils configparser filelock pre-commit
+# ==== STEP 5: Install Python Needs ====
+echo "[+] Installing final pip packages..."
+python3 -m pip install --upgrade pip
+pip3 install gnureadline healpy \
+    iminuit tqdm matplotlib numpy pandas pynverse astropy \
+    scipy uproot awkward libconf \
+    tinydb tinydb-serialization aenum pymongo dash plotly \
+    toml peakutils configparser filelock pre-commit
 
-# ==== STEP 6: Now we need some ARA specific stuff ====
-# ./versions/${VERSION}/build_libRootFftwWrapper.sh --source "$SOURCE_DIR" --build "$ARA_BUILD_DIR" --root "$VIEWDIR" --deps "$VIEWDIR" $MAKE_ARGS || error 108 "Failed libRootFftwWrapper build"
-# ./versions/${VERSION}/build_AraRoot.sh --source "$SOURCE_DIR" --build "$ARA_BUILD_DIR" --root "$VIEWDIR" --deps "$VIEWDIR" || error 109 "Failed AraRoot build"
-# ./versions/${VERSION}/build_AraSim.sh --source "$SOURCE_DIR" --build "$ARA_BUILD_DIR" --root "$VIEWDIR" --deps "$VIEWDIR" $MAKE_ARGS || error 110 "Failed AraSim build"
+==== STEP 6: Now we need some ARA specific stuff ====
+./versions/${VERSION}/build_libRootFftwWrapper.sh --source "$SOURCE_DIR" --build "$ARA_BUILD_DIR" --root "$VIEWDIR" --deps "$VIEWDIR" $MAKE_ARGS || error 108 "Failed libRootFftwWrapper build"
+./versions/${VERSION}/build_AraRoot.sh --source "$SOURCE_DIR" --build "$ARA_BUILD_DIR" --root "$VIEWDIR" --deps "$VIEWDIR" || error 109 "Failed AraRoot build"
+./versions/${VERSION}/build_AraSim.sh --source "$SOURCE_DIR" --build "$ARA_BUILD_DIR" --root "$VIEWDIR" --deps "$VIEWDIR" $MAKE_ARGS || error 110 "Failed AraSim build"
 ./versions/${VERSION}/build_libnuphase.sh --source "$SOURCE_DIR" --build "$ARA_BUILD_DIR" --root "$VIEWDIR" --deps "$VIEWDIR" || error 111 "Failed libnuphase build"
 ./versions/${VERSION}/build_nuphaseroot.sh --source "$SOURCE_DIR" --build "$ARA_BUILD_DIR" --root "$VIEWDIR" --deps "$VIEWDIR" || error 112 "Failed nuphaseroot build"
 
