@@ -132,10 +132,7 @@ fi
 if [ $SKIP_BUILD = false ]; then
 	echo "Compiling $PACKAGE_NAME"
 	cd "$PACKAGE_DIR_NAME"
-	# sed -i 's:#set(CMAKE_CXX_STANDARD 11):set(CMAKE_CXX_STANDARD 11):' CMakeLists.txt
 	bash INSTALL.sh 1 || exit 31
-	echo "Adjusting ROOT's system.rootrc for $PACKAGE_NAME"
-	sed -i 's:\(Rint.Logon\:\s*\)rootlogon.C:\1$(ARA_UTIL_INSTALL_DIR)/macros/ara_rootlogon.C:' "${ROOT_BUILD_DIR%/}/etc/system.rootrc"
 fi
 
 # Clean up source directory if requested
