@@ -98,7 +98,7 @@ spack install -j "$NPROC"
 
 # ==== STEP 5: Install Python Needs ====
 echo "[+] Installing final pip packages..."
-export PIP_CACHE_DIR=$PACK_USER_CACHE_PATH # set pip cache (again, contain the blast radius...)
+export PIP_CACHE_DIR=$SPACK_USER_CACHE_PATH # set pip cache (again, contain the blast radius...)
 python3 -m pip install --upgrade pip
 pip3 install gnureadline healpy \
     iminuit tqdm matplotlib numpy pandas pynverse astropy \
