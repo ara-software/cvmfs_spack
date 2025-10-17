@@ -13,6 +13,7 @@ OS_TAG="$2"
 TOPDIR="$3"
 SPACK_VERSION="v1.0.0"
 
+
 # ==== CONFIGURATION STUFF ====
 
 # where spack should go
@@ -25,14 +26,16 @@ YAML_SOURCE="./versions/${VERSION}/${VERSION}.yaml"
 SPACK_USER_CONFIG="/tmp/spack_user_config_${VERSION}_${OS_TAG}_${SPACK_VERSION}"
 SPACK_USER_CACHE="/tmp/spack_user_cache_${VERSION}_${OS_TAG}_${SPACK_VERSION}"
 
+THIS_BUILD_PATH="${TOPDIR}/${VERSION}/${OS_TAG}"
+
 # what will become the "misc_build" directory (for spack, this is the *view* directory)
-VIEWDIR="${TOPDIR}/${VERSION}/${OS_TAG}/misc_build"
+VIEWDIR="${THIS_BUILD_PATH}/misc_build"
 
 # what will become the "ara_build" 
-ARA_BUILD_DIR="${TOPDIR}/${VERSION}/${OS_TAG}/ara_build"
+ARA_BUILD_DIR="${THIS_BUILD_PATH}/ara_build"
 
 # what will become the "source" directory
-SOURCE_DIR="${TOPDIR}/${VERSION}/${OS_TAG}/source"
+SOURCE_DIR="${THIS_BUILD_PATH}/source"
 
 # number of processors, and the make arguments for ARA custom scripts
 NPROC=32
@@ -109,45 +112,44 @@ pip3 install gnureadline healpy \
 ./versions/${VERSION}/build_libnuphase.sh --source "$SOURCE_DIR" --build "$ARA_BUILD_DIR" --root "$VIEWDIR" --deps "$VIEWDIR" || error 111 "Failed libnuphase build"
 ./versions/${VERSION}/build_nuphaseroot.sh --source "$SOURCE_DIR" --build "$ARA_BUILD_DIR" --root "$VIEWDIR" --deps "$VIEWDIR" || error 112 "Failed nuphaseroot build"
 
-# # # ==== STEP 6: Create Setup Script ====
-# # echo "[+] Creating setup script..."
-# # PYVER=$("$VIEWDIR/bin/python3" -c "import sys; print(f'{sys.version_info.major}.{sys.version_info.minor}')")
-# # SETUP_SCRIPT="$TOPDIR/setup_${OS_TAG}.sh"
+# ==== STEP 6: Create Setup Script ====
 
-# # cat > "$SETUP_SCRIPT" <<EOS
-# # #!/bin/bash
-# # if [ -n "\${ZSH_VERSION:-}" ]; then _SRC="\${(%):-%N}"; else _SRC="\${BASH_SOURCE[0]:-\$0}"; fi
-# # export MYPROJ_ROOT="\$(cd "\$(dirname "\$_SRC")/$OS_TAG" && pwd)"
+cat > ${THIS_BUILD_PATH}/setup.sh << 'EOF'
+#!/bin/sh
+# Setup script for trunk version of the ARA software
 
-# # # Executables from the view
-# # export PATH="\$MYPROJ_ROOT/bin:\$PATH"
+export ARA_SETUP_DIR="PATH_PLACEHOLDER_REPLACE_ME"
+# If the fake path in ARA_SETUP_DIR wasn't replaced, try the working directory
+if [ ! -d "$ARA_SETUP_DIR" ]; then
+	export ARA_SETUP_DIR=$(pwd)
+fi
 
-# # # Some exports for CMake
-# # export CMAKE_PREFIX_PATH="\$MYPROJ_ROOT\${CMAKE_PREFIX_PATH:+:\$CMAKE_PREFIX_PATH}"
-# # export CC="\$MYPROJ_ROOT/bin/gcc"
-# # export CXX="\$MYPROJ_ROOT/bin/g++"
-# # export FC="\$MYPROJ_ROOT/bin/gfortran"
+export ARA_UTIL_INSTALL_DIR="${ARA_SETUP_DIR%/}/ara_build"
+export ARA_DEPS_INSTALL_DIR="${ARA_SETUP_DIR%/}/misc_build"
+export ARA_ROOT_DIR="${ARA_SETUP_DIR%/}/source/AraRoot"
+export ARA_ROOT_LIB_DIR="${ARA_UTIL_INSTALL_DIR%/}/lib"
+export ARA_SIM_DIR="${ARA_SETUP_DIR%/}/source/AraSim"
+export ARA_SIM_LIB_DIR="${ARA_UTIL_INSTALL_DIR%/}/lib"
 
-# # # Optional convenience vars some scripts still look for
-# # export ROOTSYS="\$MYPROJ_ROOT"
-# # export GSLDIR="\$MYPROJ_ROOT"
+export LD_LIBRARY_PATH="$ARA_UTIL_INSTALL_DIR/lib:$ARA_DEPS_INSTALL_DIR/lib:$LD_LIBRARY_PATH"
+export DYLD_LIBRARY_PATH="$ARA_UTIL_INSTALL_DIR/lib:$ARA_DEPS_INSTALL_DIR/lib:$DYLD_LIBRARY_PATH"
 
-# # # Python modules installed into the view
-# # export PYTHONPATH="\$MYPROJ_ROOT/lib/python$PYVER/site-packages\${PYTHONPATH:+:\$PYTHONPATH}"
+# Run thisroot.sh using `.` instead of `source` to improve POSIX compatibility
+. "${ARA_SETUP_DIR%/}/misc_build/bin/thisroot.sh"
 
-# # # PyROOT modules (what thisroot.sh would add, but via the view)
-# # for d in "\$MYPROJ_ROOT/lib/root" "\$MYPROJ_ROOT/lib64/root"; do
-# #   if [ -d "\$d" ]; then
-# #     case ":\$PYTHONPATH:" in
-# #       *:"\$d":*) : ;;  # already present
-# #       *) export PYTHONPATH="\$d\${PYTHONPATH:+:\$PYTHONPATH}";;
-# #     esac
-# #   fi
-# # done
+# set the path after we do thisroot.sh
+export PATH="$ARA_UTIL_INSTALL_DIR/bin:$ARA_DEPS_INSTALL_DIR/bin:$PATH"
 
-# # export LD_LIBRARY_PATH="\$MYPROJ_ROOT/lib:\$MYPROJ_ROOT/lib64\${LD_LIBRARY_PATH:+:\$LD_LIBRARY_PATH}"
-# # export LD_LIBRARY_PATH="\$MYPROJ_ROOT/lib/root:\$LD_LIBRARY_PATH"
-# # EOS
+export SQLITE_ROOT="$ARA_DEPS_INSTALL_DIR"
+export GSL_ROOT="$ARA_DEPS_INSTALL_DIR"
+export FFTWSYS="$ARA_DEPS_INSTALL_DIR"
 
-# # chmod +x "$SETUP_SCRIPT"
-# # echo "[✓] Setup script written to: $SETUP_SCRIPT"
+export BOOST_ROOT="$ARA_DEPS_INSTALL_DIR/include"
+
+export CMAKE_PREFIX_PATH="$ARA_DEPS_INSTALL_DIR"
+
+export NUPHASE_INSTALL_DIR="$ARA_UTIL_INSTALL_DIR"
+EOF
+
+# Now replace the placeholder with the actual value
+sed -i "s|PATH_PLACEHOLDER_REPLACE_ME|$THIS_BUILD_PATH|g" ${THIS_BUILD_PATH}/setup.sh
