@@ -25,25 +25,29 @@ YAML_SOURCE="./versions/${VERSION}/${VERSION}.yaml"
 SPACK_USER_CONFIG="/tmp/spack_user_config_${VERSION}_${OS_TAG}_${SPACK_VERSION}"
 SPACK_USER_CACHE="/tmp/spack_user_cache_${VERSION}_${OS_TAG}_${SPACK_VERSION}"
 
-# what will become "misc_build" (for spack, this is the *view* directory)
+# what will become the "misc_build" directory (for spack, this is the *view* directory)
 VIEWDIR="${TOPDIR}/${VERSION}/${OS_TAG}/misc_build"
 
-# what will become the "source"
-SOURCEDIR="${TOPDIR}/${VERSION}/${OS_TAG}/source"
+# what will become the "ara_build" 
+ARA_BUILD_DIR="${TOPDIR}/${VERSION}/${OS_TAG}/ara_build"
+
+# what will become the "source" directory
+SOURCE_DIR="${TOPDIR}/${VERSION}/${OS_TAG}/source"
 
 # number of processors, and the make arguments for ARA custom scripts
 NPROC=32
 export MAKE_ARGS="--make_arg -j$NPROC"
 
 # log everything to screen so we can see it
-echo "[+] Using OS tag:        $OS_TAG"
-echo "[+] Using TOPDIR:        $TOPDIR"
-echo "[+] Using VIEWDIR:       $VIEWDIR"
-echo "[+] Using SOURCEDIR:     $SOURCEDIR"
-echo "[+] Using SPACK DIR:     $SPACK_DIR"
-echo "[+] Using USER CONFIG:   $SPACK_USER_CONFIG"
-echo "[+] Using USER CACHE:    $SPACK_USER_CACHE"
-echo "[+] Build with NPROC=    $NPROC"
+echo "[+] Using OS tag:            $OS_TAG"
+echo "[+] Using TOPDIR:            $TOPDIR"
+echo "[+] Using VIEWDIR:           $VIEWDIR"
+echo "[+] Using SOURCE_DIR:        $SOURCE_DIR"
+echo "[+] Using ARA_BUILD_DIR:     $ARA_BUILD_DIR"
+echo "[+] Using SPACK DIR:         $SPACK_DIR"
+echo "[+] Using USER CONFIG:       $SPACK_USER_CONFIG"
+echo "[+] Using USER CACHE:        $SPACK_USER_CACHE"
+echo "[+] Build with NPROC=        $NPROC"
 
 # ==== STEP 1: Clone Spack if Needed ====
 if [ ! -d "$SPACK_DIR" ]; then
@@ -51,16 +55,19 @@ if [ ! -d "$SPACK_DIR" ]; then
     mkdir -p "$(dirname "$SPACK_DIR")"
 	  git clone --depth=1 --branch "$SPACK_VERSION" https://github.com/spack/spack.git "$SPACK_DIR"
 fi
-# Set paths BEFORE sourcing Spack
+# Set paths, and set up directories, BEFORE sourcing Spack
+# the "before spack" is extra important because if we don't set the config and caches
+# before sourcing spack, they don't get set right
 export SPACK_USER_CONFIG_PATH="$SPACK_USER_CONFIG"
 export SPACK_USER_CACHE_PATH="$SPACK_USER_CACHE"
 mkdir -p "$SPACK_USER_CONFIG"
 mkdir -p "$SPACK_USER_CACHE"
-mkdir -p "$SOURCEDIR"
+mkdir -p "$SOURCE_DIR"
+mkdir -p "$ARA_BUILD_DIR"
 mkdir -p "$VIEWDIR"
 source "$SPACK_DIR/share/spack/setup-env.sh"
 
-# ==== STEP 2: Upgrade GCC first ====
+# ==== STEP 2: Upgrade GCC ====
 spack compiler add # find the compilers we have so far
 spack compilers
 BOOTSTRAP_COMPILER=$(spack compilers | grep "gcc@" | head -1 | grep -o 'gcc@[0-9.]*')
@@ -77,32 +84,30 @@ spack compilers
 
 # ==== STEP 3: Create Environment (with view), and activate ====
 echo "[+] Creating and activating Spack environment..."
-spack env create "$ENV_NAME" "$YAML_SOURCE" --with-view "$VIEWDIR"
+# spack env create "$ENV_NAME" "$YAML_SOURCE" --with-view "$VIEWDIR"
 spack env activate "$ENV_NAME"
 
-# ==== STEP 4: Concretize and Install Full Stack ====
-echo "[+] Starting concretization..."
-spack concretize --fresh --reuse
-echo "[+] Concretization finished. Starting installation..."
-spack install -j "$NPROC"
+# # ==== STEP 4: Concretize and Install Full Stack ====
+# echo "[+] Starting concretization..."
+# spack concretize --fresh --reuse
+# echo "[+] Concretization finished. Starting installation..."
+# spack install -j "$NPROC"
 
-# ==== STEP 5: Install Python Needs ====
-echo "[+] Installing final pip packages..."
-python3 -m pip install --upgrade pip
-pip3 install gnureadline healpy \
-    iminuit tqdm matplotlib numpy pandas pynverse astropy \
-    scipy uproot awkward libconf \
-    tinydb tinydb-serialization aenum pymongo dash plotly \
-    toml peakutils configparser filelock pre-commit
+# # ==== STEP 5: Install Python Needs ====
+# echo "[+] Installing final pip packages..."
+# python3 -m pip install --upgrade pip
+# pip3 install gnureadline healpy \
+#     iminuit tqdm matplotlib numpy pandas pynverse astropy \
+#     scipy uproot awkward libconf \
+#     tinydb tinydb-serialization aenum pymongo dash plotly \
+#     toml peakutils configparser filelock pre-commit
 
-# # # ==== STEP 6: Now we need some ARA specific stuff ====
-
-# # # which cmake
-# # ./versions/${VERSION}/build_libRootFftwWrapper.sh --source "$OTHER_SCRATCH_SPACE" --build "$VIEWDIR" --root "$VIEWDIR" --deps "$VIEWDIR" $MAKE_ARGS || error 108 "Failed libRootFftwWrapper build"
-# # ./versions/${VERSION}/build_AraRoot.sh --source "$OTHER_SCRATCH_SPACE" --build "$VIEWDIR" --root "$VIEWDIR" --deps "$VIEWDIR" || error 109 "Failed AraRoot build"
-# # ./versions/${VERSION}/build_AraSim.sh --source "$SOURCE_DIR" --build "$ARA_BUILD_DIR" --root "$ROOT_BUILD_DIR" --deps "$DEPS_BUILD_DIR" $MAKE_ARG || error 110 "Failed AraSim build"
-# # ./build_libnuphase.sh --source "$SOURCE_DIR" --build "$ARA_BUILD_DIR" --root "$ROOT_BUILD_DIR" --deps "$DEPS_BUILD_DIR" $SKIP_ARG || error 111 "Failed libnuphase build"
-# # ./build_nuphaseroot.sh --source "$SOURCE_DIR" --build "$ARA_BUILD_DIR" --root "$ROOT_BUILD_DIR" --deps "$DEPS_BUILD_DIR" $SKIP_ARG || error 112 "Failed nuphaseroot build"
+# ==== STEP 6: Now we need some ARA specific stuff ====
+# ./versions/${VERSION}/build_libRootFftwWrapper.sh --source "$SOURCE_DIR" --build "$ARA_BUILD_DIR" --root "$VIEWDIR" --deps "$VIEWDIR" $MAKE_ARGS || error 108 "Failed libRootFftwWrapper build"
+# ./versions/${VERSION}/build_AraRoot.sh --source "$SOURCE_DIR" --build "$ARA_BUILD_DIR" --root "$VIEWDIR" --deps "$VIEWDIR" || error 109 "Failed AraRoot build"
+# ./versions/${VERSION}/build_AraSim.sh --source "$SOURCE_DIR" --build "$ARA_BUILD_DIR" --root "$VIEWDIR" --deps "$VIEWDIR" $MAKE_ARGS || error 110 "Failed AraSim build"
+./versions/${VERSION}/build_libnuphase.sh --source "$SOURCE_DIR" --build "$ARA_BUILD_DIR" --root "$VIEWDIR" --deps "$VIEWDIR" || error 111 "Failed libnuphase build"
+./versions/${VERSION}/build_nuphaseroot.sh --source "$SOURCE_DIR" --build "$ARA_BUILD_DIR" --root "$VIEWDIR" --deps "$VIEWDIR" || error 112 "Failed nuphaseroot build"
 
 # # # ==== STEP 6: Create Setup Script ====
 # # echo "[+] Creating setup script..."
