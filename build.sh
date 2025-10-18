@@ -106,7 +106,7 @@ pip3 install gnureadline healpy \
     tinydb tinydb-serialization aenum pymongo dash plotly \
     toml peakutils configparser filelock pre-commit
 
-==== STEP 6: Now we need some ARA specific stuff ====
+# ==== STEP 6: Now we need some ARA specific stuff ====
 ./builders/${VERSION}/build_libRootFftwWrapper.sh --source "$SOURCE_DIR" --build "$ARA_BUILD_DIR" --root "$MISC_DIR" --deps "$MISC_DIR" $MAKE_ARGS || error 108 "Failed libRootFftwWrapper build"
 ./builders/${VERSION}/build_AraRoot.sh --source "$SOURCE_DIR" --build "$ARA_BUILD_DIR" --root "$MISC_DIR" --deps "$MISC_DIR" || error 109 "Failed AraRoot build"
 ./builders/${VERSION}/build_AraSim.sh --source "$SOURCE_DIR" --build "$ARA_BUILD_DIR" --root "$MISC_DIR" --deps "$MISC_DIR" $MAKE_ARGS || error 110 "Failed AraSim build"
