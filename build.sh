@@ -97,7 +97,6 @@ echo "[+] Concretization finished. Starting installation..."
 spack install -j "$NPROC"
 
 # ==== STEP 5: Install Python Needs ====
-echo "[+] Installing final pip packages..."
 export PIP_CACHE_DIR=$SPACK_USER_CACHE_PATH # set pip cache (again, contain the blast radius...)
 python3 -m pip install --upgrade pip
 pip3 install gnureadline healpy \
@@ -107,6 +106,19 @@ pip3 install gnureadline healpy \
     toml peakutils configparser filelock pre-commit
 
 # ==== STEP 6: Now we need some ARA specific stuff ====
+# source $(spack location -i root)/bin/thisroot.sh
+
+ROOT_COMPILER=$(spack find --format '{compiler}' root | head -1)
+echo "ROOT was built with: $ROOT_COMPILER"
+spack load $ROOT_COMPILER
+
+# Manually add GCC's library path since spack load didn't do it
+GCC_PREFIX=$(spack location -i $ROOT_COMPILER)
+export LD_LIBRARY_PATH="$GCC_PREFIX/lib64:$GCC_PREFIX/lib:$LD_LIBRARY_PATH"
+
+echo "LD_LIBRARY_PATH after fix: $LD_LIBRARY_PATH"
+echo "PATH: $PATH"
+
 ./builders/${VERSION}/build_libRootFftwWrapper.sh --source "$SOURCE_DIR" --build "$ARA_BUILD_DIR" --root "$MISC_DIR" --deps "$MISC_DIR" $MAKE_ARGS || error 108 "Failed libRootFftwWrapper build"
 ./builders/${VERSION}/build_AraRoot.sh --source "$SOURCE_DIR" --build "$ARA_BUILD_DIR" --root "$MISC_DIR" --deps "$MISC_DIR" || error 109 "Failed AraRoot build"
 ./builders/${VERSION}/build_AraSim.sh --source "$SOURCE_DIR" --build "$ARA_BUILD_DIR" --root "$MISC_DIR" --deps "$MISC_DIR" $MAKE_ARGS || error 110 "Failed AraSim build"
