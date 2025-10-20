@@ -2,16 +2,17 @@
 set -euo pipefail
 
 # ==== ARGUMENTS ====
-if [ $# -ne 4 ]; then
-    echo "Usage: $0 <version> <os_tag> <topdir> <nproc>"
-    echo "Example: $0 trunk el9 /cvmfs/ara.opensciencegrid.org/trunk/el9 8"
+if [ $# -ne 5 ]; then
+    echo "Usage: $0 <yaml_file> <version> <os_tag> <topdir> <nproc>"
+    echo "Example: $0 /path/to/trunk.yaml trunk el9 /cvmfs/ara.opensciencegrid.org/trunk/el9 8"
     exit 1
 fi
 
-VERSION="$1"
-OS_TAG="$2"
-DESTDIR="$3"
-NPROC="$4"
+YAML_SOURCE="$1"
+VERSION="$2"
+OS_TAG="$3"
+DESTDIR="$4"
+NPROC="$5"
 SPACK_VERSION="v1.0.0"
 
 # ==== CONFIGURATION STUFF ====
@@ -29,7 +30,6 @@ SOURCE_DIR="${DESTDIR}/source"
 # and set up some temporary files for spack, to contain its cache blast radius
 SPACK_DIR="${DESTDIR}/.spack_internals/spack_${VERSION}_${OS_TAG}_${SPACK_VERSION}"
 ENV_NAME="${VERSION}_${OS_TAG}"
-YAML_SOURCE="./builders/${VERSION}/${VERSION}.yaml"
 SPACK_USER_CONFIG="/scratch/spack_user_config_${VERSION}_${OS_TAG}_${SPACK_VERSION}"
 SPACK_USER_CACHE="/scratch/spack_user_cache_${VERSION}_${OS_TAG}_${SPACK_VERSION}"
 SPACK_TMPDIR="/scratch/spack_tmpdir_${VERSION}_${OS_TAG}_${SPACK_VERSION}"
