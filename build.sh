@@ -55,20 +55,20 @@ if [ ! -d "$SPACK_DIR" ]; then
     mkdir -p "$(dirname "$SPACK_DIR")"
 	  git clone --depth=1 --branch "$SPACK_VERSION" https://github.com/spack/spack.git "$SPACK_DIR"
 fi
-# # Set paths, and set up directories, BEFORE sourcing Spack
-# # the "before spack" is extra important because if we don't set the config and caches
-# # before sourcing spack, they don't get set right
-# export SPACK_USER_CONFIG_PATH="$SPACK_USER_CONFIG"
-# export SPACK_USER_CACHE_PATH="$SPACK_USER_CACHE"
-# export SPACK_TMPDIR="$SPACK_TMPDIR"
-# export TMPDIR="$SPACK_TMPDIR"
-# mkdir -p "$SPACK_USER_CONFIG"
-# mkdir -p "$SPACK_USER_CACHE"
-# mkdir -p "$SPACK_TMPDIR"
-# mkdir -p "$SOURCE_DIR"
-# mkdir -p "$ARA_BUILD_DIR"
-# mkdir -p "$MISC_DIR"
-# source "$SPACK_DIR/share/spack/setup-env.sh"
+# Set paths, and set up directories, BEFORE sourcing Spack
+# the "before spack" is extra important because if we don't set the config and caches
+# before sourcing spack, they don't get set right
+export SPACK_USER_CONFIG_PATH="$SPACK_USER_CONFIG"
+export SPACK_USER_CACHE_PATH="$SPACK_USER_CACHE"
+export SPACK_TMPDIR="$SPACK_TMPDIR"
+export TMPDIR="$SPACK_TMPDIR"
+mkdir -p "$SPACK_USER_CONFIG"
+mkdir -p "$SPACK_USER_CACHE"
+mkdir -p "$SPACK_TMPDIR"
+mkdir -p "$SOURCE_DIR"
+mkdir -p "$ARA_BUILD_DIR"
+mkdir -p "$MISC_DIR"
+source "$SPACK_DIR/share/spack/setup-env.sh"
 
 # # ==== STEP 2: Upgrade GCC ====
 # spack compiler add # find the compilers we have so far
