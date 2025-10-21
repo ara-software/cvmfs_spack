@@ -60,26 +60,26 @@ echo # just clear the queue
 echo
 echo
 
-# # ==== STEP 1: Clone Spack if Needed ====
-# if [ ! -d "$SPACK_DIR" ]; then
-#     echo "[+] Cloning Spack into $SPACK_DIR..."
-#     mkdir -p "$(dirname "$SPACK_DIR")"
-# 	  git clone --depth=1 --branch "$SPACK_VERSION" https://github.com/spack/spack.git "$SPACK_DIR"
-# fi
-# # Set paths, and set up directories, BEFORE sourcing Spack
-# # the "before spack" is extra important because if we don't set the config and caches
-# # before sourcing spack, they don't get set right
-# export SPACK_USER_CONFIG_PATH="$SPACK_USER_CONFIG"
-# export SPACK_USER_CACHE_PATH="$SPACK_USER_CACHE"
-# export SPACK_TMPDIR="$SPACK_TMPDIR"
-# export TMPDIR="$SPACK_TMPDIR"
-# mkdir -p "$SPACK_USER_CONFIG"
-# mkdir -p "$SPACK_USER_CACHE"
-# mkdir -p "$SPACK_TMPDIR"
-# mkdir -p "$SOURCE_DIR"
-# mkdir -p "$ARA_BUILD_DIR"
-# mkdir -p "$MISC_DIR"
-# source "$SPACK_DIR/share/spack/setup-env.sh"
+# ==== STEP 1: Clone Spack if Needed ====
+if [ ! -d "$SPACK_DIR" ]; then
+    echo "[+] Cloning Spack into $SPACK_DIR..."
+    mkdir -p "$(dirname "$SPACK_DIR")"
+	  git clone --depth=1 --branch "$SPACK_VERSION" https://github.com/spack/spack.git "$SPACK_DIR"
+fi
+# Set paths, and set up directories, BEFORE sourcing Spack
+# the "before spack" is extra important because if we don't set the config and caches
+# before sourcing spack, they don't get set right
+export SPACK_USER_CONFIG_PATH="$SPACK_USER_CONFIG"
+export SPACK_USER_CACHE_PATH="$SPACK_USER_CACHE"
+export SPACK_TMPDIR="$SPACK_TMPDIR"
+export TMPDIR="$SPACK_TMPDIR"
+mkdir -p "$SPACK_USER_CONFIG"
+mkdir -p "$SPACK_USER_CACHE"
+mkdir -p "$SPACK_TMPDIR"
+mkdir -p "$SOURCE_DIR"
+mkdir -p "$ARA_BUILD_DIR"
+mkdir -p "$MISC_DIR"
+source "$SPACK_DIR/share/spack/setup-env.sh"
 
 # # ==== STEP 2: Upgrade GCC ====
 # spack compiler add # find the compilers we have so far
@@ -136,44 +136,44 @@ echo
 # ${GIT_REPO_DIR}/builders/${VERSION}/build_libnuphase.sh --source "$SOURCE_DIR" --build "$ARA_BUILD_DIR" --root "$MISC_DIR" --deps "$MISC_DIR" || error 111 "Failed libnuphase build"
 # ${GIT_REPO_DIR}/builders/${VERSION}/build_nuphaseroot.sh --source "$SOURCE_DIR" --build "$ARA_BUILD_DIR" --root "$MISC_DIR" --deps "$MISC_DIR" || error 112 "Failed nuphaseroot build"
 
-# # ==== STEP 6: Create Setup Script ====
+# ==== STEP 6: Create Setup Script ====
 
-# cat > ${DESTDIR}/setup.sh << 'EOF'
-# #!/bin/sh
-# # Setup script for trunk version of the ARA software
+cat > ${DESTDIR}/setup.sh << 'EOF'
+#!/bin/sh
+# Setup script for trunk version of the ARA software
 
-# export ARA_SETUP_DIR="PATH_PLACEHOLDER_REPLACE_ME"
-# # If the fake path in ARA_SETUP_DIR wasn't replaced, try the working directory
-# if [ ! -d "$ARA_SETUP_DIR" ]; then
-# 	export ARA_SETUP_DIR=$(pwd)
-# fi
+export ARA_SETUP_DIR="PATH_PLACEHOLDER_REPLACE_ME"
+# If the fake path in ARA_SETUP_DIR wasn't replaced, try the working directory
+if [ ! -d "$ARA_SETUP_DIR" ]; then
+	export ARA_SETUP_DIR=$(pwd)
+fi
 
-# export ARA_UTIL_INSTALL_DIR="${ARA_SETUP_DIR%/}/ara_build"
-# export ARA_DEPS_INSTALL_DIR="${ARA_SETUP_DIR%/}/misc_build"
-# export ARA_ROOT_DIR="${ARA_SETUP_DIR%/}/source/AraRoot"
-# export ARA_ROOT_LIB_DIR="${ARA_UTIL_INSTALL_DIR%/}/lib"
-# export ARA_SIM_DIR="${ARA_SETUP_DIR%/}/source/AraSim"
-# export ARA_SIM_LIB_DIR="${ARA_UTIL_INSTALL_DIR%/}/lib"
+export ARA_UTIL_INSTALL_DIR="${ARA_SETUP_DIR%/}/ara_build"
+export ARA_DEPS_INSTALL_DIR="${ARA_SETUP_DIR%/}/misc_build"
+export ARA_ROOT_DIR="${ARA_SETUP_DIR%/}/source/AraRoot"
+export ARA_ROOT_LIB_DIR="${ARA_UTIL_INSTALL_DIR%/}/lib"
+export ARA_SIM_DIR="${ARA_SETUP_DIR%/}/source/AraSim"
+export ARA_SIM_LIB_DIR="${ARA_UTIL_INSTALL_DIR%/}/lib"
 
-# export LD_LIBRARY_PATH="$ARA_UTIL_INSTALL_DIR/lib:$ARA_DEPS_INSTALL_DIR/lib:$LD_LIBRARY_PATH"
-# export DYLD_LIBRARY_PATH="$ARA_UTIL_INSTALL_DIR/lib:$ARA_DEPS_INSTALL_DIR/lib:$DYLD_LIBRARY_PATH"
+export LD_LIBRARY_PATH="$ARA_UTIL_INSTALL_DIR/lib:$ARA_DEPS_INSTALL_DIR/lib:$LD_LIBRARY_PATH"
+export DYLD_LIBRARY_PATH="$ARA_UTIL_INSTALL_DIR/lib:$ARA_DEPS_INSTALL_DIR/lib:$DYLD_LIBRARY_PATH"
 
-# # Run thisroot.sh using `.` instead of `source` to improve POSIX compatibility
-# . "${ARA_SETUP_DIR%/}/misc_build/bin/thisroot.sh"
+# Run thisroot.sh using `.` instead of `source` to improve POSIX compatibility
+. "${ARA_SETUP_DIR%/}/misc_build/bin/thisroot.sh"
 
-# # set the path after we do thisroot.sh
-# export PATH="$ARA_UTIL_INSTALL_DIR/bin:$ARA_DEPS_INSTALL_DIR/bin:$PATH"
+# set the path after we do thisroot.sh
+export PATH="$ARA_UTIL_INSTALL_DIR/bin:$ARA_DEPS_INSTALL_DIR/bin:$PATH"
 
-# export SQLITE_ROOT="$ARA_DEPS_INSTALL_DIR"
-# export GSL_ROOT="$ARA_DEPS_INSTALL_DIR"
-# export FFTWSYS="$ARA_DEPS_INSTALL_DIR"
+export SQLITE_ROOT="$ARA_DEPS_INSTALL_DIR"
+export GSL_ROOT="$ARA_DEPS_INSTALL_DIR"
+export FFTWSYS="$ARA_DEPS_INSTALL_DIR"
 
-# export BOOST_ROOT="$ARA_DEPS_INSTALL_DIR/include"
+export BOOST_ROOT="$ARA_DEPS_INSTALL_DIR/include"
 
-# export CMAKE_PREFIX_PATH="$ARA_DEPS_INSTALL_DIR"
+export CMAKE_PREFIX_PATH="$ARA_DEPS_INSTALL_DIR"
 
-# export NUPHASE_INSTALL_DIR="$ARA_UTIL_INSTALL_DIR"
-# EOF
+export NUPHASE_INSTALL_DIR="$ARA_UTIL_INSTALL_DIR"
+EOF
 
-# # Now replace the placeholder with the actual value
-# sed -i "s|PATH_PLACEHOLDER_REPLACE_ME|$DESTDIR|g" ${DESTDIR}/setup.sh
+# Now replace the placeholder with the actual value
+sed -i "s|PATH_PLACEHOLDER_REPLACE_ME|$DESTDIR|g" ${DESTDIR}/setup.sh
