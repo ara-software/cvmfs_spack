@@ -81,60 +81,60 @@ mkdir -p "$ARA_BUILD_DIR"
 mkdir -p "$MISC_DIR"
 source "$SPACK_DIR/share/spack/setup-env.sh"
 
-# # ==== STEP 2: Upgrade GCC ====
-# spack compiler add # find the compilers we have so far
-# spack compilers
-# BOOTSTRAP_COMPILER=$(spack compilers | grep "gcc@" | head -1 | grep -o 'gcc@[0-9.]*')
-# echo "[+] Will use $BOOTSTRAP_COMPILER to bootstrap gcc@15.2.0"
-# if ! spack compilers | grep -q gcc@15.2.0; then
-#     # install the compiler we want, and force rebuild binutils
-#     # along with telling it to ignore any fancy optimizations
-#     # that might not be available globally
-#     echo "[+] Bootstrapping gcc@15.2.0..."
-#     spack install --add -j "$NPROC" "gcc@15.2.0 %${BOOTSTRAP_COMPILER} +binutils ^zlib-ng~opt"
-#     spack compiler find $(spack location -i gcc@15.2.0)
-# fi
-# spack compilers
+# ==== STEP 2: Upgrade GCC ====
+spack compiler add # find the compilers we have so far
+spack compilers
+BOOTSTRAP_COMPILER=$(spack compilers | grep "gcc@" | head -1 | grep -o 'gcc@[0-9.]*')
+echo "[+] Will use $BOOTSTRAP_COMPILER to bootstrap gcc@15.2.0"
+if ! spack compilers | grep -q gcc@15.2.0; then
+    # install the compiler we want, and force rebuild binutils
+    # along with telling it to ignore any fancy optimizations
+    # that might not be available globally
+    echo "[+] Bootstrapping gcc@15.2.0..."
+    spack install --add -j "$NPROC" "gcc@15.2.0 %${BOOTSTRAP_COMPILER} +binutils ^zlib-ng~opt"
+    spack compiler find $(spack location -i gcc@15.2.0)
+fi
+spack compilers
 
-# # ==== STEP 3: Create Environment (with view), and activate ====
-# echo "[+] Creating and activating Spack environment..."
-# spack env create "$ENV_NAME" "$YAML_SOURCE" --with-view "$MISC_DIR"
-# spack env activate "$ENV_NAME"
+# ==== STEP 3: Create Environment (with view), and activate ====
+echo "[+] Creating and activating Spack environment..."
+spack env create "$ENV_NAME" "$YAML_SOURCE" --with-view "$MISC_DIR"
+spack env activate "$ENV_NAME"
 
-# # ==== STEP 4: Concretize and Install Full Stack ====
-# echo "[+] Starting concretization..."
-# spack concretize --fresh --reuse
-# echo "[+] Concretization finished. Starting installation..."
-# spack install -j "$NPROC"
+# ==== STEP 4: Concretize and Install Full Stack ====
+echo "[+] Starting concretization..."
+spack concretize --fresh --reuse
+echo "[+] Concretization finished. Starting installation..."
+spack install -j "$NPROC"
 
-# # ==== STEP 5: Install Python Needs ====
-# export PIP_CACHE_DIR=$SPACK_USER_CACHE_PATH # set pip cache (again, contain the blast radius...)
-# python3 -m pip install --upgrade pip
-# pip3 install gnureadline healpy \
-#     iminuit tqdm matplotlib numpy pandas pynverse astropy \
-#     scipy uproot awkward libconf \
-#     tinydb tinydb-serialization aenum pymongo dash plotly \
-#     toml peakutils configparser filelock pre-commit
+# ==== STEP 5: Install Python Needs ====
+export PIP_CACHE_DIR=$SPACK_USER_CACHE_PATH # set pip cache (again, contain the blast radius...)
+python3 -m pip install --upgrade pip
+pip3 install gnureadline healpy \
+    iminuit tqdm matplotlib numpy pandas pynverse astropy \
+    scipy uproot awkward libconf \
+    tinydb tinydb-serialization aenum pymongo dash plotly \
+    toml peakutils configparser filelock pre-commit
 
-# # ==== STEP 6: Now we need some ARA specific stuff ====
-# # source $(spack location -i root)/bin/thisroot.sh
+# ==== STEP 6: Now we need some ARA specific stuff ====
+# source $(spack location -i root)/bin/thisroot.sh
 
-# ROOT_COMPILER=$(spack find --format '{compiler}' root | head -1)
-# echo "ROOT was built with: $ROOT_COMPILER"
-# spack load $ROOT_COMPILER
+ROOT_COMPILER=$(spack find --format '{compiler}' root | head -1)
+echo "ROOT was built with: $ROOT_COMPILER"
+spack load $ROOT_COMPILER
 
-# # Manually add GCC's library path since spack load didn't do it
-# GCC_PREFIX=$(spack location -i $ROOT_COMPILER)
-# export LD_LIBRARY_PATH="$GCC_PREFIX/lib64:$GCC_PREFIX/lib:$LD_LIBRARY_PATH"
+# Manually add GCC's library path since spack load didn't do it
+GCC_PREFIX=$(spack location -i $ROOT_COMPILER)
+export LD_LIBRARY_PATH="$GCC_PREFIX/lib64:$GCC_PREFIX/lib:$LD_LIBRARY_PATH"
 
-# echo "LD_LIBRARY_PATH after fix: $LD_LIBRARY_PATH"
-# echo "PATH: $PATH"
+echo "LD_LIBRARY_PATH after fix: $LD_LIBRARY_PATH"
+echo "PATH: $PATH"
 
-# ${GIT_REPO_DIR}/builders/${VERSION}/build_libRootFftwWrapper.sh --source "$SOURCE_DIR" --build "$ARA_BUILD_DIR" --root "$MISC_DIR" --deps "$MISC_DIR" $MAKE_ARGS || error 108 "Failed libRootFftwWrapper build"
-# ${GIT_REPO_DIR}/builders/${VERSION}/build_AraRoot.sh --source "$SOURCE_DIR" --build "$ARA_BUILD_DIR" --root "$MISC_DIR" --deps "$MISC_DIR" || error 109 "Failed AraRoot build"
-# ${GIT_REPO_DIR}/builders/${VERSION}/build_AraSim.sh --source "$SOURCE_DIR" --build "$ARA_BUILD_DIR" --root "$MISC_DIR" --deps "$MISC_DIR" $MAKE_ARGS || error 110 "Failed AraSim build"
-# ${GIT_REPO_DIR}/builders/${VERSION}/build_libnuphase.sh --source "$SOURCE_DIR" --build "$ARA_BUILD_DIR" --root "$MISC_DIR" --deps "$MISC_DIR" || error 111 "Failed libnuphase build"
-# ${GIT_REPO_DIR}/builders/${VERSION}/build_nuphaseroot.sh --source "$SOURCE_DIR" --build "$ARA_BUILD_DIR" --root "$MISC_DIR" --deps "$MISC_DIR" || error 112 "Failed nuphaseroot build"
+${GIT_REPO_DIR}/builders/${VERSION}/build_libRootFftwWrapper.sh --source "$SOURCE_DIR" --build "$ARA_BUILD_DIR" --root "$MISC_DIR" --deps "$MISC_DIR" $MAKE_ARGS || error 108 "Failed libRootFftwWrapper build"
+${GIT_REPO_DIR}/builders/${VERSION}/build_AraRoot.sh --source "$SOURCE_DIR" --build "$ARA_BUILD_DIR" --root "$MISC_DIR" --deps "$MISC_DIR" || error 109 "Failed AraRoot build"
+${GIT_REPO_DIR}/builders/${VERSION}/build_AraSim.sh --source "$SOURCE_DIR" --build "$ARA_BUILD_DIR" --root "$MISC_DIR" --deps "$MISC_DIR" $MAKE_ARGS || error 110 "Failed AraSim build"
+${GIT_REPO_DIR}/builders/${VERSION}/build_libnuphase.sh --source "$SOURCE_DIR" --build "$ARA_BUILD_DIR" --root "$MISC_DIR" --deps "$MISC_DIR" || error 111 "Failed libnuphase build"
+${GIT_REPO_DIR}/builders/${VERSION}/build_nuphaseroot.sh --source "$SOURCE_DIR" --build "$ARA_BUILD_DIR" --root "$MISC_DIR" --deps "$MISC_DIR" || error 112 "Failed nuphaseroot build"
 
 # ==== STEP 6: Create Setup Script ====
 
