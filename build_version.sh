@@ -11,6 +11,7 @@ fi
 VERSION="$1"
 OS="$2"
 IMAGE="./${OS}.sif"
+NPROC=40
 
 
 # the final real path where we want files to be installed
@@ -27,6 +28,7 @@ BUILD_DIR="/scratch/brianclark/ara_build/${VERSION}/${OS}"
 mkdir -p $BUILD_DIR
 
 BUILD_SCRIPT="./build.sh"
+GIT_REPO_DIR="./"
 
 # in cvmfs, we bind BUILD_DIR to DESTDIR
 # so that we can temporarily write to BUILD_DIR,
@@ -42,4 +44,4 @@ apptainer exec -c \
     -B "$SCRATCH_DIR":/var \
     -B "$PWD":"$PWD" \
     "$IMAGE" \
-    "$BUILD_SCRIPT" "$VERSION" "$OS" "$DESTDIR"
+    "$BUILD_SCRIPT" "$GIT_REPO_DIR" "$VERSION" "$OS" "$DESTDIR" "$NPROC"
