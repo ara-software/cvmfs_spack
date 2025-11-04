@@ -6,7 +6,7 @@ spack:
     - gsl@2.8
     - sqlite@3.50.4
     - boost@1.88.0
-    - cfitsio@4.6.3
+    - cfitsio@4.5.0
     - python@3.14.0 +ssl +shared +zlib +sqlite3 ^sqlite@3.50.4
     - py-pip
     - py-pybind11
