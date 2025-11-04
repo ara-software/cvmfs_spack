@@ -173,6 +173,16 @@ export BOOST_ROOT="$ARA_DEPS_INSTALL_DIR/include"
 export CMAKE_PREFIX_PATH="$ARA_DEPS_INSTALL_DIR"
 
 export NUPHASE_INSTALL_DIR="$ARA_UTIL_INSTALL_DIR"
+
+# detect and set python
+# Find the python3.* site-packages directory
+SITE_PACKAGES=$(find "${ARA_DEPS_INSTALL_DIR}/lib" -maxdepth 1 -type d -name 'python3.*' -print -quit 2>/dev/null)
+
+if [ -n "$SITE_PACKAGES" ] && [ -d "${SITE_PACKAGES}/site-packages" ]; then
+    export PYTHONPATH="${SITE_PACKAGES}/site-packages${PYTHONPATH:+:$PYTHONPATH}"
+else
+    echo "Warning: Could not find Python site-packages directory in ${ARA_DEPS_INSTALL_DIR}/lib" >&2
+fi
 EOF
 
 # Now replace the placeholder with the actual value
