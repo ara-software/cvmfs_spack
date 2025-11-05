@@ -109,6 +109,10 @@ spack install -j "$NPROC"
 
 # ==== STEP 5: Install Python Needs ====
 export PIP_CACHE_DIR=$SPACK_USER_CACHE_PATH # set pip cache (again, contain the blast radius...)
+# need these to make sure pip installs healpy correctly by building it against
+# our copy of cfitsio
+export LDFLAGS="-L$MISC_DIR/lib -Wl,-rpath,$MISC_DIR/lib"
+export CPPFLAGS="-I$MISC_DIR/include"
 python3 -m pip install --upgrade pip
 pip3 install gnureadline healpy \
     iminuit tqdm matplotlib numpy pandas pynverse astropy \
