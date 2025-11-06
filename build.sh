@@ -98,7 +98,9 @@ spack compilers
 
 # ==== STEP 3: Create Environment (with view), and activate ====
 echo "[+] Creating and activating Spack environment..."
-spack env create "$ENV_NAME" "$YAML_SOURCE" --with-view "$MISC_DIR"
+if [ ! -d "$SPACK_ROOT/var/spack/environments/$ENV_NAME" ]; then
+    spack env create "$ENV_NAME" "$YAML_SOURCE" --with-view "$MISC_DIR"
+fi
 spack env activate "$ENV_NAME"
 
 # ==== STEP 4: Concretize and Install Full Stack ====
@@ -107,12 +109,17 @@ spack concretize --fresh --reuse
 echo "[+] Concretization finished. Starting installation..."
 spack install -j "$NPROC"
 
+# build healpix now, before we pip install healpy (healpix will bring in libsharp)
+${GIT_REPO_DIR}/builders/${VERSION}/build_healpix.sh --source "$SOURCE_DIR" --build "$ARA_BUILD_DIR" --root "$MISC_DIR" --deps "$MISC_DIR" $MAKE_ARGS || error 104 "Failed healpix build"
+
+
 # ==== STEP 5: Install Python Needs ====
 export PIP_CACHE_DIR=$SPACK_USER_CACHE_PATH # set pip cache (again, contain the blast radius...)
 # need these to make sure pip installs healpy correctly by building it against
 # our copy of cfitsio
 export LDFLAGS="-L$MISC_DIR/lib -Wl,-rpath,$MISC_DIR/lib"
 export CPPFLAGS="-I$MISC_DIR/include"
+export PKG_CONFIG_PATH="$MISC_DIR/lib/pkgconfig:$PKG_CONFIG_PATH"
 python3 -m pip install --upgrade pip
 pip3 install gnureadline healpy \
     iminuit tqdm matplotlib numpy pandas pynverse astropy \
@@ -121,7 +128,6 @@ pip3 install gnureadline healpy \
     toml peakutils configparser filelock pre-commit
 
 # ==== STEP 6: Now we need some ARA specific stuff ====
-# source $(spack location -i root)/bin/thisroot.sh
 
 ROOT_COMPILER=$(spack find --format '{compiler}' root | head -1)
 echo "ROOT was built with: $ROOT_COMPILER"
