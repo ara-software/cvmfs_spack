@@ -164,35 +164,46 @@ export ARA_ROOT_DIR="${ARA_SETUP_DIR%/}/source/AraRoot"
 export ARA_ROOT_LIB_DIR="${ARA_UTIL_INSTALL_DIR%/}/lib"
 export ARA_SIM_DIR="${ARA_SETUP_DIR%/}/source/AraSim"
 export ARA_SIM_LIB_DIR="${ARA_UTIL_INSTALL_DIR%/}/lib"
+export NUPHASE_INSTALL_DIR="$ARA_UTIL_INSTALL_DIR"
 
+# Executables and library stuff that we compiled
+export PATH="$ARA_UTIL_INSTALL_DIR/bin:$ARA_DEPS_INSTALL_DIR/bin:$PATH"
 export LD_LIBRARY_PATH="$ARA_UTIL_INSTALL_DIR/lib:$ARA_DEPS_INSTALL_DIR/lib:$LD_LIBRARY_PATH"
 export DYLD_LIBRARY_PATH="$ARA_UTIL_INSTALL_DIR/lib:$ARA_DEPS_INSTALL_DIR/lib:$DYLD_LIBRARY_PATH"
 
-# Run thisroot.sh using `.` instead of `source` to improve POSIX compatibility
-. "${ARA_SETUP_DIR%/}/misc_build/bin/thisroot.sh"
-
-# set the path after we do thisroot.sh
-export PATH="$ARA_UTIL_INSTALL_DIR/bin:$ARA_DEPS_INSTALL_DIR/bin:$PATH"
-
-export SQLITE_ROOT="$ARA_DEPS_INSTALL_DIR"
-export GSL_ROOT="$ARA_DEPS_INSTALL_DIR"
-export FFTWSYS="$ARA_DEPS_INSTALL_DIR"
-
-export BOOST_ROOT="$ARA_DEPS_INSTALL_DIR/include"
-
-export CMAKE_PREFIX_PATH="$ARA_DEPS_INSTALL_DIR"
-
-export NUPHASE_INSTALL_DIR="$ARA_UTIL_INSTALL_DIR"
-
-# detect and set python
-# Find the python3.* site-packages directory
+# detect and set python (Find the python3.* site-packages directory)
 SITE_PACKAGES=$(find "${ARA_DEPS_INSTALL_DIR}/lib" -maxdepth 1 -type d -name 'python3.*' -print -quit 2>/dev/null)
-
 if [ -n "$SITE_PACKAGES" ] && [ -d "${SITE_PACKAGES}/site-packages" ]; then
     export PYTHONPATH="${SITE_PACKAGES}/site-packages${PYTHONPATH:+:$PYTHONPATH}"
 else
     echo "Warning: Could not find Python site-packages directory in ${ARA_DEPS_INSTALL_DIR}/lib" >&2
 fi
+
+# Do stuff that would have been done in what thisroot.sh would add, but via the view)
+export ROOTSYS="$ARA_DEPS_INSTALL_DIR"
+export PYTHONPATH="$ARA_DEPS_INSTALL_DIR/lib/python$PYVER/site-packages${PYTHONPATH:+:$PYTHONPATH}"
+for d in "$ARA_DEPS_INSTALL_DIR/lib/root" "$ARA_DEPS_INSTALL_DIR/lib64/root"; do
+  if [ -d "$d" ]; then
+    case ":$PYTHONPATH:" in
+      *:"$d":*) : ;;  # already present
+      *) export PYTHONPATH="$d${PYTHONPATH:+:$PYTHONPATH}";;
+    esac
+  fi
+done
+
+# exports for CMake
+export CMAKE_PREFIX_PATH="$ARA_DEPS_INSTALL_DIR"
+export CC="$ARA_DEPS_INSTALL_DIR/bin/gcc"
+export CXX="$ARA_DEPS_INSTALL_DIR/bin/g++"
+export FC="$ARA_DEPS_INSTALL_DIR/bin/gfortran"
+
+# exports for stuff besides CMake
+export SQLITE_ROOT="$ARA_DEPS_INSTALL_DIR"
+export GSL_ROOT="$ARA_DEPS_INSTALL_DIR"
+export GSLDIR="$ARA_DEPS_INSTALL_DIR"
+export FFTWSYS="$ARA_DEPS_INSTALL_DIR"
+export BOOST_ROOT="$ARA_DEPS_INSTALL_DIR/include"
+
 EOF
 
 # Now replace the placeholder with the actual value
