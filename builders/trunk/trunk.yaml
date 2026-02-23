@@ -19,6 +19,7 @@ spack:
     install_tree:
       projections:
         python: "{name}/{version}"
+        py-python-venv: "{name}/{version}"
   packages:
     all:
       prefer:
