@@ -15,6 +15,11 @@ spack:
     - root@6.36.04 +python +gsl +tmva +roofit +http +ssl +spectrum
   concretizer:
     unify: true
+  config:
+    install_tree:
+      projections:
+        python: "{name}/{version}"
+        py-python-venv: "{name}/{version}"
   packages:
     all:
       prefer:
