@@ -1,7 +1,7 @@
 spack:
   specs:
     - gcc@15.2.0 +binutils ^zlib-ng~opt
-    - cmake@4.1.1
+    - cmake@4.1.2
     - fftw@3.3.10
     - gsl@2.8
     - sqlite@3.50.4
@@ -20,6 +20,10 @@ spack:
       projections:
         python: "{name}/{version}"
         py-python-venv: "{name}/{version}"
+  repos:
+    builtin:
+      git: https://github.com/spack/spack-packages.git
+      tag: v2025.11.0
   packages:
     all:
       prefer:
