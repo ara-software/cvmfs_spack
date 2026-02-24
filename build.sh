@@ -13,7 +13,7 @@ VERSION="$2"
 OS_TAG="$3"
 DESTDIR="$4"
 NPROC="$5"
-SPACK_VERSION="v1.0.0"
+SPACK_VERSION="v1.1.1"
 
 # ==== CONFIGURATION STUFF ====
 
@@ -80,6 +80,7 @@ mkdir -p "$SOURCE_DIR"
 mkdir -p "$ARA_BUILD_DIR"
 mkdir -p "$MISC_DIR"
 source "$SPACK_DIR/share/spack/setup-env.sh"
+spack repo update builtin --tag v2025.11.0
 
 # ==== STEP 2: Upgrade GCC ====
 spack compiler add # find the compilers we have so far
@@ -91,7 +92,7 @@ if ! spack compilers | grep -q gcc@15.2.0; then
     # along with telling it to ignore any fancy optimizations
     # that might not be available globally
     echo "[+] Bootstrapping gcc@15.2.0..."
-    spack install --add -j "$NPROC" "gcc@15.2.0 %${BOOTSTRAP_COMPILER} +binutils ^zlib-ng~opt"
+    spack install --add -j "$NPROC" "gcc@15.2.0 +binutils ^zlib-ng~opt ^gcc@${BOOTSTRAP_COMPILER#gcc@}"
     spack compiler find $(spack location -i gcc@15.2.0)
 fi
 spack compilers
