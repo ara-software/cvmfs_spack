@@ -86,13 +86,14 @@ spack repo update builtin --tag v2025.11.0
 spack compiler add # find the compilers we have so far
 spack compilers
 BOOTSTRAP_COMPILER=$(spack compilers | grep "gcc@" | head -1 | grep -o 'gcc@[0-9.]*')
+BOOTSTRAP_VERSION="${BOOTSTRAP_COMPILER#gcc@}"
 echo "[+] Will use $BOOTSTRAP_COMPILER to bootstrap gcc@15.2.0"
 if ! spack compilers | grep -q gcc@15.2.0; then
     # install the compiler we want, and force rebuild binutils
     # along with telling it to ignore any fancy optimizations
     # that might not be available globally
     echo "[+] Bootstrapping gcc@15.2.0..."
-    spack install --add -j "$NPROC" "gcc@15.2.0 +binutils ^zlib-ng~opt ^gcc@${BOOTSTRAP_COMPILER#gcc@}"
+    spack install --add -j "$NPROC" "gcc@15.2.0 +binutils %gcc@${BOOTSTRAP_VERSION} ^zlib-ng~opt"
     spack compiler find $(spack location -i gcc@15.2.0)
 fi
 spack compilers
